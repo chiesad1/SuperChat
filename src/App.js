@@ -1,40 +1,46 @@
-import logo from './logo.svg';
+import React, { useRef, useState } from 'react';
 import './App.css';
 
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
+import 'firebase/analytics';
 
-import {useAuthState} from 'react-firebase-hooks/auth';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import {useCollectionData} from 'react-firebase-hooks/firestore';
 
 firebase.initializeApp({
   //Config
-
   apiKey: "AIzaSyB-Fzqy98NpNziu7UGoc3YQHWs6V8tIcRc",
   authDomain: "chatdemo-d7cdd.firebaseapp.com",
   databaseURL: "https://chatdemo-d7cdd.firebaseio.com",
   projectId: "chatdemo-d7cdd",
   storageBucket: "chatdemo-d7cdd.appspot.com",
   messagingSenderId: "809550924762",
-  appId: "1:809550924762:web:f8eb99a292914b98560ee3",
-  measurementId: "G-0ST8F7SWGS"
+  appId: "1:809550924762:web:3244a486bf9aada5560ee3",
+  measurementId: "G-DXDS5YMFNG"
 })
 
-const auth =firebase.auth;
+const auth =firebase.auth();
 const firestore = firebase.firestore();
+// const analytics = firebase.analytics();
 
-const [user] = useAuthState(auth);
+
 
 function App() {
+
+  const [user] = useAuthState(auth);
+
   return (
     <div className="App">
       <header className="App-header">
-
+      <h1>Poopy Talk</h1>
+      {user ? <ChatRoom /> : <SignIn />}
+      <SignOut />
       </header>
 
       <section>
-        {user ? <ChatRoom /> : <SignIn />}
+        
       </section>
     </div>
   );
@@ -47,18 +53,21 @@ function SignIn() {
   }
   
   return(
-    <button onClick={signInWithGoogle}>Sign in with Google</button>
+    <>
+    <button className="sign-in" onClick={signInWithGoogle}>Sign in with Google</button>
+    <p>Please be nice!</p>
+    </>
   )
 
 }
 function SignOut() {
   return auth.currentUser && (
-    <button onClick={() => auth.signOut()}>SignOut</button>
+    <button className ="sign-out" onClick={() => auth.signOut()}>SignOut</button>
   )
-
 }
 
 function ChatRoom(){
+  const dummy = useRef();
   const messageRef = firestore.collection('messages');
   const query = messageRef.orderBy('createdAt').limit(25);
 
@@ -67,7 +76,6 @@ function ChatRoom(){
   const [formValue, setFormValue] = useState(''); 
 
   const sendMessage = async (e) => {
-
     e.preventDefault();
     
     const {uid,photoURL} = auth.currentUser;
@@ -80,24 +88,22 @@ function ChatRoom(){
     })
 
     setFormValue('');
-
+    dummy.current.scrollIntoView({ behavior: 'smooth' });
   }
 
 
-  return(
+  return(<>
   <main>
-    <div>{messages && messages.map(msg => <ChatMessage key={msg.id} message={msg}/>)}</div>
-
-
-    <form onSubmit={sendMessage}>
-      <input value={formValue} onChange={(e) => setFormValue(e.target.value)} />
-
-      <button type="submit">🕊</button>
-      
-
-    </form>
+    {messages && messages.map(msg => <ChatMessage key={msg.id} message={msg}/>)}
+    <span ref={dummy}></span>
   </main>
-  
+
+  <form onSubmit={sendMessage}>
+      <input value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="say something nice please" />
+
+      <button type="submit" disabled={!formValue}>🕊</button>
+    </form>
+  </>
 
   )
 }
@@ -107,12 +113,12 @@ function ChatMessage(props){
 
   const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
 
-  return (
+  return (<>
     <div className={`message ${messageClass}`}>
-      <img src={photoURL} />
+      <img src={photoURL} alt=""/>
       <p>{text}</p>
     </div>
-
+    </>
   )
 
 
